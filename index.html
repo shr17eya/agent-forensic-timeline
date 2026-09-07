@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case File — Agent Forensic Timeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --board:#2E2620;
+    --board-line:#241D18;
+    --card:#F1E8D2;
+    --card-edge:#DCCFAE;
+    --ink:#2B2420;
+    --ink-dim:#6B5D4A;
+    --ink-faint:#9C8D74;
+    --stamp:#A5372B;
+    --stamp-soft:#E8D3CD;
+    --verified:#4B6B57;
+    --verified-soft:#DCE4DA;
+    --pin:#8C2E24;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:
+      repeating-linear-gradient(45deg, var(--board) 0px, var(--board) 2px, var(--board-line) 2px, var(--board-line) 4px);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    font-size:14px;
+    line-height:1.5;
+    min-height:100vh;
+  }
+
+  .control-strip{
+    position:sticky; top:0; z-index:30;
+    background:#1C1712;
+    border-bottom:3px solid var(--pin);
+    padding:10px 30px;
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  }
+  .ctrl-btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px; font-weight:600; letter-spacing:0.03em;
+    padding:7px 14px; cursor:pointer; border:none;
+    text-transform:uppercase;
+  }
+  .ctrl-play{ background:var(--stamp); color:#F1E8D2; clip-path:polygon(0 0, 100% 0, 94% 100%, 6% 100%); }
+  .ctrl-new{ background:var(--verified); color:#F1E8D2; clip-path:polygon(0 0, 100% 0, 94% 100%, 6% 100%); }
+  .ctrl-reset{ background:transparent; color:#B8AC96; border:1px solid #4A4034; }
+  .ctrl-reset:hover{ color:#F1E8D2; border-color:#6B5D4A; }
+  .ctrl-status{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:#8C8171; }
+  .live-dot{ width:6px; height:6px; border-radius:50%; background:var(--stamp); display:inline-block; margin-right:6px; animation:pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.2;} }
+
+  .main{ max-width:920px; margin:0 auto; padding:44px 30px 80px; }
+
+  .folder-tab{
+    display:inline-block;
+    background:var(--card);
+    padding:8px 22px 6px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px; font-weight:600; letter-spacing:0.06em;
+    color:var(--ink-dim);
+    clip-path:polygon(8% 0, 92% 0, 100% 100%, 0 100%);
+    margin-bottom:-2px; margin-left:20px;
+  }
+  .case-header{
+    background:var(--card);
+    border:1px solid var(--card-edge);
+    box-shadow:0 8px 22px rgba(0,0,0,0.4);
+    padding:26px 30px 24px;
+    position:relative;
+  }
+  .case-title{ font-family:'Special Elite', monospace; font-size:26px; color:var(--ink); margin-bottom:8px; }
+  .case-sub{ font-size:13px; color:var(--ink-dim); max-width:520px; }
+  .stamp-open{
+    position:absolute; top:20px; right:26px;
+    border:3px solid var(--stamp); color:var(--stamp);
+    font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:13px;
+    letter-spacing:0.12em; padding:5px 14px; transform:rotate(-9deg); opacity:0.85;
+  }
+
+  .section-label{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; letter-spacing:0.04em; text-transform:uppercase;
+    color:#B8AC96; margin:40px 0 18px;
+  }
+
+  .chain{ display:flex; align-items:flex-start; justify-content:space-between; gap:6px; padding:30px 10px 10px; position:relative; }
+  .chain::before{
+    content:''; position:absolute; top:56px; left:14%; right:14%; height:2px;
+    background:repeating-linear-gradient(90deg, var(--pin) 0 8px, transparent 8px 14px); z-index:0;
+  }
+  .chain-node{ flex:1; max-width:220px; position:relative; z-index:1; }
+  .chain-node:nth-child(1) .photo-card{ transform:rotate(-3deg); }
+  .chain-node:nth-child(2) .photo-card{ transform:rotate(2deg); }
+  .chain-node:nth-child(3) .photo-card{ transform:rotate(-1.5deg); }
+  .photo-card{ background:var(--card); border:1px solid var(--card-edge); box-shadow:0 6px 16px rgba(0,0,0,0.35); padding:10px 10px 14px; transition:box-shadow 0.4s ease; }
+  .photo-card::before{
+    content:''; position:absolute; top:-9px; left:50%; margin-left:-7px; width:14px; height:14px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #E08276, var(--pin)); box-shadow:0 3px 4px rgba(0,0,0,0.5);
+  }
+  .photo-swatch{
+    height:64px; margin-bottom:10px; display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace; font-size:22px; font-weight:600; color:#EFE6D0; background:#5C5344; letter-spacing:0.05em;
+    transition:background 0.4s ease;
+  }
+  .photo-card.patient-zero .photo-swatch{ background:var(--stamp); }
+  .photo-card.alert .photo-swatch{ background:#3E5A4E; }
+  .node-label{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; font-weight:600; color:var(--ink); margin-bottom:3px; }
+  .node-sub{ font-size:10.5px; color:var(--ink-dim); line-height:1.4; }
+  .node-tag{
+    display:inline-block; margin-top:8px; font-family:'IBM Plex Mono', monospace; font-size:9.5px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase;
+    color:var(--stamp); border:1.5px solid var(--stamp); padding:2px 6px;
+    opacity:0; transform:rotate(-4deg) scale(0.9); transition:opacity 0.4s ease, transform 0.4s ease;
+  }
+  .node-tag.show{ opacity:1; transform:rotate(-4deg) scale(1); }
+
+  .timeline{ position:relative; padding-left:26px; }
+  .timeline::before{ content:''; position:absolute; left:6px; top:6px; bottom:6px; width:2px; background:var(--pin); opacity:0.55; }
+  .step{ position:relative; background:var(--card); border:1px solid var(--card-edge); box-shadow:0 5px 14px rgba(0,0,0,0.32); padding:14px 18px 16px; margin-bottom:22px; max-width:640px; }
+  .step:nth-child(odd){ transform:rotate(-0.6deg); }
+  .step:nth-child(even){ transform:rotate(0.5deg); }
+  .step::before{ content:''; position:absolute; left:-26px; top:16px; width:10px; height:10px; border-radius:50%; background:var(--board); border:2px solid var(--ink-faint); }
+  .step.flagged::before{ border-color:var(--stamp); background:var(--stamp); }
+
+  .step-top{ display:flex; align-items:baseline; gap:10px; margin-bottom:6px; flex-wrap:wrap; }
+  .step-time{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-dim); }
+  .step-actor{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; font-weight:600; color:var(--ink); }
+  .step-desc{ font-size:13.5px; color:var(--ink); line-height:1.55; margin-bottom:8px; }
+  .step-tags{ display:flex; gap:6px; flex-wrap:wrap; }
+  .step-tag{ font-family:'IBM Plex Mono', monospace; font-size:9.5px; font-weight:600; letter-spacing:0.02em; padding:2px 7px; text-transform:uppercase; }
+  .tag-atlas{ background:#E3DAEC; color:#5A4470; }
+  .tag-source{ background:#E4DDC9; color:var(--ink-dim); }
+  .tag-flag{ background:var(--stamp-soft); color:var(--stamp); }
+
+  .findings{ margin-top:40px; background:var(--card); border:1px solid var(--card-edge); box-shadow:0 8px 20px rgba(0,0,0,0.38); padding:26px 30px; position:relative; max-width:700px; }
+  .findings-stamp{
+    position:absolute; top:18px; right:22px; border:3px solid var(--verified); color:var(--verified);
+    font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:11.5px; letter-spacing:0.08em; padding:5px 10px; transform:rotate(7deg); opacity:0.85;
+  }
+  .findings-title{ font-family:'Special Elite', monospace; font-size:18px; margin-bottom:4px; }
+  .findings-sub{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-dim); margin-bottom:16px; text-transform:uppercase; letter-spacing:0.03em; }
+  .findings-body{ font-size:13.5px; color:var(--ink); line-height:1.65; margin-bottom:20px; max-width:560px; }
+  .findings-actions{ display:flex; gap:10px; flex-wrap:wrap; padding-top:16px; border-top:1px dashed var(--card-edge); }
+
+  .btn{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; font-weight:600; letter-spacing:0.02em;
+    padding:9px 16px; cursor:pointer; border:1.5px solid var(--ink-dim); background:transparent; color:var(--ink-dim); text-transform:uppercase;
+  }
+  .btn:hover{ border-color:var(--ink); color:var(--ink); }
+  .btn-primary{ background:var(--verified); border-color:var(--verified); color:#F1E8D2; }
+  .btn-primary:hover:not(:disabled){ background:#5C8271; border-color:#5C8271; color:#F1E8D2; }
+  .btn:disabled{ opacity:0.35; cursor:not-allowed; }
+  .btn.exported{ background:var(--stamp) !important; border-color:var(--stamp) !important; color:#F1E8D2 !important; cursor:default; opacity:1 !important; }
+
+  .animatable{ transition:opacity 0.5s ease, filter 0.5s ease, transform 0.5s ease; }
+  .animatable.pending{ opacity:0; filter:blur(3px); transform:translateY(6px) rotate(0deg) !important; }
+</style>
+</head>
+<body>
+
+<div class="control-strip">
+  <button class="ctrl-btn ctrl-play" id="replayBtn">▶ Play Investigation</button>
+  <button class="ctrl-btn ctrl-new" id="newCaseBtn">🔀 New Case</button>
+  <button class="ctrl-btn ctrl-reset" id="resetBtn">↺ Reset Case</button>
+  <span class="ctrl-status" id="replayStatus"><span class="live-dot"></span>Idle</span>
+</div>
+
+<div class="main">
+  <div class="folder-tab" id="folderTab">CASE FILE · INC-2094</div>
+  <div class="case-header">
+    <div class="stamp-open">UNDER REVIEW</div>
+    <div class="case-title" id="caseTitle">Agent Forensic Timeline</div>
+    <div class="case-sub" id="caseSub">Reconstructing the agent decision chain.</div>
+  </div>
+
+  <div class="section-label">Suspects — where the corruption started vs. where it was noticed</div>
+  <div class="chain">
+    <div class="chain-node animatable pending" id="node1">
+      <div class="photo-card" id="node1box">
+        <div class="photo-swatch" id="node1code">VOA</div>
+        <div class="node-label" id="node1label"></div>
+        <div class="node-sub" id="node1sub"></div>
+        <div class="node-tag" id="node1tag">Patient Zero</div>
+      </div>
+    </div>
+    <div class="chain-node animatable pending" id="node2">
+      <div class="photo-card">
+        <div class="photo-swatch" id="node2code">PAA</div>
+        <div class="node-label" id="node2label"></div>
+        <div class="node-sub" id="node2sub"></div>
+      </div>
+    </div>
+    <div class="chain-node animatable pending" id="node3">
+      <div class="photo-card" id="node3box">
+        <div class="photo-swatch">XS</div>
+        <div class="node-label">Cortex XSIAM</div>
+        <div class="node-sub">Anomaly alert fired here</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Reconstructed evidence log</div>
+  <div class="timeline" id="timeline">
+    <div class="step normal animatable pending" id="s1"><div class="step-top"><span class="step-time"></span><span class="step-actor"></span></div><div class="step-desc"></div><div class="step-tags"></div></div>
+    <div class="step flagged animatable pending" id="s2"><div class="step-top"><span class="step-time"></span><span class="step-actor"></span></div><div class="step-desc"></div><div class="step-tags"></div></div>
+    <div class="step flagged animatable pending" id="s3"><div class="step-top"><span class="step-time"></span><span class="step-actor"></span></div><div class="step-desc"></div><div class="step-tags"></div></div>
+    <div class="step flagged animatable pending" id="s4"><div class="step-top"><span class="step-time"></span><span class="step-actor"></span></div><div class="step-desc"></div><div class="step-tags"></div></div>
+    <div class="step normal animatable pending" id="s5"><div class="step-top"><span class="step-time"></span><span class="step-actor"></span></div><div class="step-desc"></div><div class="step-tags"></div></div>
+    <div class="step flagged animatable pending" id="s6"><div class="step-top"><span class="step-time"></span><span class="step-actor"></span></div><div class="step-desc"></div><div class="step-tags"></div></div>
+  </div>
+
+  <div class="findings">
+    <div class="findings-stamp">CONFIRMED</div>
+    <div class="findings-title">Attribution</div>
+    <div class="findings-sub">Auto-generated from the reconstructed chain above</div>
+    <div class="findings-body" id="findingsBody"></div>
+    <div class="findings-actions">
+      <button class="btn" id="downloadReport">⬇ Download Evidence Log (.txt)</button>
+      <button class="btn btn-primary" id="exportToDPDP" disabled>Export Root Cause → DPDP AutoReport</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---------- Three distinct, technically-grounded cases ----------
+  const CASES = [
+  {
+    "id": "INC-2094",
+    "title": "Agent Forensic Timeline",
+    "sub": "Reconstructing the agent decision chain — feeds the \"Root cause\" field of the DPDP AutoReport module for this same incident.",
+    "nodes": [
+      {
+        "code": "VOA",
+        "label": "Vendor-Onboarding Agent",
+        "sub": "Long-term memory store"
+      },
+      {
+        "code": "PAA",
+        "label": "Procurement Approval Agent",
+        "sub": "Received corrupted output as trusted input"
+      }
+    ],
+    "steps": [
+      {
+        "time": "09:11:02",
+        "actor": "Vendor-Onboarding Agent",
+        "desc": "Receives routine task: \"Fetch latest KYC documents for Vendor #4471.\"",
+        "tags": [
+          [
+            "source",
+            "Runtime Telemetry"
+          ]
+        ],
+        "flagged": false
+      },
+      {
+        "time": "09:11:04",
+        "actor": "Vendor-Onboarding Agent",
+        "desc": "Loads a cached context note from long-term memory. The note was silently altered in a prior session — this is the actual point of compromise.",
+        "tags": [
+          [
+            "atlas",
+            "Atlas: Memory Manipulation"
+          ],
+          [
+            "source",
+            "Memory Snapshot"
+          ],
+          [
+            "flag",
+            "Patient Zero"
+          ]
+        ],
+        "flagged": true
+      },
+      {
+        "time": "09:11:05",
+        "actor": "Vendor-Onboarding Agent",
+        "desc": "The poisoned context silently redirects the document-retrieval tool call to an unauthorised external endpoint instead of the real vendor portal.",
+        "tags": [
+          [
+            "atlas",
+            "Atlas: Tool-Chain Poisoning"
+          ],
+          [
+            "source",
+            "Tool-Call Log"
+          ]
+        ],
+        "flagged": true
+      },
+      {
+        "time": "09:11:06",
+        "actor": "Vendor-Onboarding Agent",
+        "desc": "Returns a normal-looking \"success\" response. Nothing in the agent's own tool-call log indicates anything went wrong.",
+        "tags": [
+          [
+            "source",
+            "Tool-Call Log"
+          ]
+        ],
+        "flagged": true
+      },
+      {
+        "time": "09:11:09",
+        "actor": "Procurement Approval Agent",
+        "desc": "Receives the (already-compromised) output as trusted input from the first agent and approves the vendor record update.",
+        "tags": [
+          [
+            "source",
+            "Runtime Telemetry"
+          ]
+        ],
+        "flagged": false
+      },
+      {
+        "time": "09:14:00",
+        "actor": "Cortex XSIAM",
+        "desc": "Flags anomalous outbound data volume from the procurement workflow — nearly three minutes after the real point of compromise.",
+        "tags": [
+          [
+            "source",
+            "XSIAM"
+          ]
+        ],
+        "flagged": true
+      }
+    ],
+    "findings": "Patient zero is the Vendor-Onboarding Agent's memory manipulation at 09:11:04 — not the Procurement Approval Agent, where the breach first became externally visible through XSIAM."
+  },
+  {
+    "id": "INC-2101",
+    "title": "Agent Forensic Timeline",
+    "sub": "A second reconstructed case — same tool, a different attack pattern: context poisoning via document intake.",
+    "nodes": [
+      {
+        "code": "HRA",
+        "label": "HR Onboarding Agent",
+        "sub": "New-hire document intake"
+      },
+      {
+        "code": "PSA",
+        "label": "Payroll Sync Agent",
+        "sub": "Received corrupted output as trusted input"
+      }
+    ],
+    "steps": [
+      {
+        "time": "14:02:11",
+        "actor": "HR Onboarding Agent",
+        "desc": "Receives routine task: \"Process new-hire intake packet for Employee #2207.\"",
+        "tags": [
+          [
+            "source",
+            "Runtime Telemetry"
+          ]
+        ],
+        "flagged": false
+      },
+      {
+        "time": "14:02:14",
+        "actor": "HR Onboarding Agent",
+        "desc": "A resume attachment in the intake packet contains hidden instructions that alter the agent's operating context — this is the actual point of compromise.",
+        "tags": [
+          [
+            "atlas",
+            "Atlas: AI Agent Context Poisoning"
+          ],
+          [
+            "source",
+            "Document Parser Log"
+          ],
+          [
+            "flag",
+            "Patient Zero"
+          ]
+        ],
+        "flagged": true
+      },
+      {
+        "time": "14:02:16",
+        "actor": "HR Onboarding Agent",
+        "desc": "The altered context silently modifies the agent's own configuration, changing bank-account verification from mandatory to skipped.",
+        "tags": [
+          [
+            "atlas",
+            "Atlas: Modify AI Agent Configuration"
+          ],
+          [
+            "source",
+            "Config Diff"
+          ]
+        ],
+        "flagged": true
+      },
+      {
+        "time": "14:02:17",
+        "actor": "HR Onboarding Agent",
+        "desc": "Returns a normal-looking \"intake complete\" response. Nothing in the agent's own logs indicates its configuration changed.",
+        "tags": [
+          [
+            "source",
+            "Runtime Telemetry"
+          ]
+        ],
+        "flagged": true
+      },
+      {
+        "time": "14:02:20",
+        "actor": "Payroll Sync Agent",
+        "desc": "Receives the (already-compromised) record as trusted input and syncs an unverified bank account as the payment destination.",
+        "tags": [
+          [
+            "source",
+            "Runtime Telemetry"
+          ]
+        ],
+        "flagged": false
+      },
+      {
+        "time": "14:05:40",
+        "actor": "Cortex XSIAM",
+        "desc": "Flags an anomalous first-payroll-cycle destination-account change — the first point a human analyst would see anything.",
+        "tags": [
+          [
+            "source",
+            "XSIAM"
+          ]
+        ],
+        "flagged": true
+      }
+    ],
+    "findings": "Patient zero is the HR Onboarding Agent's context poisoning at 14:02:14 — not the Payroll Sync Agent, where the bad payment destination first became visible."
+  },
+  {
+    "id": "INC-2115",
+    "title": "Agent Forensic Timeline",
+    "sub": "A third reconstructed case — same tool, a different attack pattern: thread injection and sandbox escape.",
+    "nodes": [
+      {
+        "code": "SCA",
+        "label": "Support Copilot Agent",
+        "sub": "Customer chat reasoning thread"
+      },
+      {
+        "code": "TRA",
+        "label": "Ticket Routing Agent",
+        "sub": "Received corrupted output as trusted input"
+      }
+    ],
+    "steps": [
+      {
+        "time": "19:47:03",
+        "actor": "Support Copilot Agent",
+        "desc": "Receives routine task: \"Respond to customer chat, ticket #88291.\"",
+        "tags": [
+          [
+            "source",
+            "Runtime Telemetry"
+          ]
+        ],
+        "flagged": false
+      },
+      {
+        "time": "19:47:06",
+        "actor": "Support Copilot Agent",
+        "desc": "A crafted customer message is treated as a system-level instruction inside the agent's reasoning thread — this is the actual point of compromise.",
+        "tags": [
+          [
+            "atlas",
+            "Atlas: Thread Injection"
+          ],
+          [
+            "source",
+            "Chat Transcript"
+          ],
+          [
+            "flag",
+            "Patient Zero"
+          ]
+        ],
+        "flagged": true
+      },
+      {
+        "time": "19:47:08",
+        "actor": "Support Copilot Agent",
+        "desc": "The injected instruction causes the agent to step outside its sandboxed tool environment and read local session files.",
+        "tags": [
+          [
+            "atlas",
+            "Atlas: Escape to Host"
+          ],
+          [
+            "source",
+            "Sandbox Log"
+          ]
+        ],
+        "flagged": true
+      },
+      {
+        "time": "19:47:09",
+        "actor": "Support Copilot Agent",
+        "desc": "Returns a normal-looking chat reply. Nothing in the visible conversation log indicates a sandbox escape occurred.",
+        "tags": [
+          [
+            "source",
+            "Chat Transcript"
+          ]
+        ],
+        "flagged": true
+      },
+      {
+        "time": "19:47:13",
+        "actor": "Ticket Routing Agent",
+        "desc": "Receives the (already-compromised) session data attached to the routed ticket and forwards it as trusted input to a support queue.",
+        "tags": [
+          [
+            "source",
+            "Runtime Telemetry"
+          ]
+        ],
+        "flagged": false
+      },
+      {
+        "time": "19:49:50",
+        "actor": "Cortex XSIAM",
+        "desc": "Flags an unusual file-read pattern originating from the copilot's sandbox — the first point a human analyst would see anything.",
+        "tags": [
+          [
+            "source",
+            "XSIAM"
+          ]
+        ],
+        "flagged": true
+      }
+    ],
+    "findings": "Patient zero is the Support Copilot Agent's thread injection at 19:47:06 — not the Ticket Routing Agent, where the exposed session data first became visible."
+  }
+];
+
+  const TAG_CLASS = { atlas:'tag-atlas', source:'tag-source', flag:'tag-flag' };
+  let currentCaseIndex = 0;
+
+  function renderCase(idx){
+    const c = CASES[idx];
+    currentCaseIndex = idx;
+    document.getElementById('folderTab').textContent = 'CASE FILE · ' + c.id;
+    document.getElementById('caseTitle').textContent = c.title;
+    document.getElementById('caseSub').textContent = c.sub;
+    document.getElementById('node1code').textContent = c.nodes[0].code;
+    document.getElementById('node1label').textContent = c.nodes[0].label;
+    document.getElementById('node1sub').textContent = c.nodes[0].sub;
+    document.getElementById('node2code').textContent = c.nodes[1].code;
+    document.getElementById('node2label').textContent = c.nodes[1].label;
+    document.getElementById('node2sub').textContent = c.nodes[1].sub;
+
+    ['s1','s2','s3','s4','s5','s6'].forEach((id, i) => {
+      const step = c.steps[i];
+      const el = document.getElementById(id);
+      el.querySelector('.step-time').textContent = step.time;
+      el.querySelector('.step-actor').textContent = step.actor;
+      el.querySelector('.step-desc').textContent = step.desc;
+      const tagsEl = el.querySelector('.step-tags');
+      tagsEl.innerHTML = '';
+      step.tags.forEach(([type, text]) => {
+        const span = document.createElement('span');
+        span.className = 'step-tag ' + TAG_CLASS[type];
+        span.textContent = text;
+        tagsEl.appendChild(span);
+      });
+    });
+
+    document.getElementById('findingsBody').textContent = c.findings;
+  }
+
+  function reveal(id){ const el = document.getElementById(id); if (el) el.classList.remove('pending'); }
+  const statusEl = document.getElementById('replayStatus');
+  function setStatus(t){ statusEl.innerHTML = '<span class="live-dot"></span>' + t; }
+  const replayBtn = document.getElementById('replayBtn');
+  const exportBtn = document.getElementById('exportToDPDP');
+
+  function resetSequence(){
+    ['node1','node2','node3','s1','s2','s3','s4','s5','s6'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('pending'); });
+    document.getElementById('node1box').classList.remove('patient-zero');
+    document.getElementById('node1tag').classList.remove('show');
+    document.getElementById('node3box').classList.remove('alert');
+    exportBtn.disabled = true;
+    exportBtn.textContent = 'Export Root Cause → DPDP AutoReport';
+    exportBtn.classList.remove('exported');
+  }
+
+  function playSequence(){
+    replayBtn.disabled = true;
+    replayBtn.textContent = '● Investigating…';
+    resetSequence();
+    setStatus('Cortex XSIAM: anomaly alert received — starting forensic reconstruction');
+
+    const steps = [
+      [700,  () => { reveal('node1'); }],
+      [500,  () => setStatus('Pulling runtime telemetry…')],
+      [900,  () => reveal('s1')],
+      [1000, () => setStatus('Cross-referencing memory and context sources…')],
+      [900,  () => reveal('s2')],
+      [700,  () => { document.getElementById('node1box').classList.add('patient-zero'); document.getElementById('node1tag').classList.add('show'); }],
+      [900,  () => setStatus('Tracing tool-call and configuration logs…')],
+      [900,  () => reveal('s3')],
+      [800,  () => reveal('s4')],
+      [900,  () => { reveal('node2'); setStatus('Tracing handoff to the second agent…'); }],
+      [900,  () => reveal('s5')],
+      [900,  () => { reveal('node3'); document.getElementById('node3box').classList.add('alert'); setStatus('Correlating with XSIAM alert timestamp…'); }],
+      [800,  () => reveal('s6')],
+      [900,  () => { setStatus('Investigation complete — attribution ready'); exportBtn.disabled = false; }],
+    ];
+    let t = 400;
+    steps.forEach(([delay, action]) => { t += delay; setTimeout(action, t); });
+    setTimeout(() => { replayBtn.disabled = false; replayBtn.textContent = '↻ Replay Investigation'; }, t + 400);
+  }
+
+  replayBtn.addEventListener('click', playSequence);
+
+  const STORAGE_KEY = 'agent_forensic_demo_v2';
+  function saveState(){
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ caseIndex: currentCaseIndex, exported: exportBtn.classList.contains('exported') })); } catch(e) {}
+  }
+
+  function loadSavedState(){
+    let saved;
+    try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch(e) { saved = null; }
+    if (!saved) return false;
+
+    renderCase(saved.caseIndex || 0);
+    ['node1','node2','node3','s1','s2','s3','s4','s5','s6'].forEach(id => reveal(id));
+    document.getElementById('node1box').classList.add('patient-zero');
+    document.getElementById('node1tag').classList.add('show');
+    document.getElementById('node3box').classList.add('alert');
+    exportBtn.disabled = false;
+
+    if (saved.exported){
+      exportBtn.textContent = '✓ Exported to ' + CASES[currentCaseIndex].id + ' draft';
+      exportBtn.classList.add('exported');
+    }
+    setStatus('Restored your previous session — pick up where you left off, or hit Reset');
+    replayBtn.textContent = '↻ Replay Investigation';
+    return true;
+  }
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+    location.reload();
+  });
+
+  document.getElementById('newCaseBtn').addEventListener('click', () => {
+    let nextIndex;
+    do { nextIndex = Math.floor(Math.random() * CASES.length); } while (nextIndex === currentCaseIndex && CASES.length > 1);
+    renderCase(nextIndex);
+    saveState();
+    playSequence();
+  });
+
+  document.getElementById('downloadReport').addEventListener('click', () => {
+    const c = CASES[currentCaseIndex];
+    const lines = ['CASE FILE — ' + c.id + ' — Agent Forensic Timeline', '='.repeat(46), ''];
+    document.querySelectorAll('.step').forEach(step => {
+      const time = step.querySelector('.step-time')?.textContent || '';
+      const actor = step.querySelector('.step-actor')?.textContent || '';
+      const desc = step.querySelector('.step-desc')?.textContent || '';
+      lines.push(`[${time}] ${actor}`);
+      lines.push(desc);
+      lines.push('');
+    });
+    lines.push('Attribution:');
+    lines.push(document.getElementById('findingsBody').textContent);
+    lines.push('');
+    lines.push('--- Generated by Agent Forensic Timeline concept prototype — not a real system ---');
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = c.id + '_agent_forensic_timeline.txt';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  exportBtn.addEventListener('click', () => {
+    if (exportBtn.disabled || exportBtn.classList.contains('exported')) return;
+    exportBtn.textContent = '✓ Exported to ' + CASES[currentCaseIndex].id + ' draft';
+    exportBtn.classList.add('exported');
+    setStatus("Root cause exported — available in DPDP AutoReport's CERT-In draft");
+    saveState();
+  });
+
+  window.addEventListener('load', () => {
+    const restored = loadSavedState();
+    if (!restored){ renderCase(0); setTimeout(playSequence, 500); }
+  });
+</script>
+
+</body>
+</html>
