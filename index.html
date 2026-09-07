@@ -251,35 +251,17 @@
  }
 
  function computeAttribution(events){
-   if (!Array.isArray(events) || !events.length){
-     return { summary: 'No events available to compute attribution.' };
+   const patientZeroEvent = events.find(e => e.flagged);
+   const alertEvent = events[events.length - 1];
+   if (!patientZeroEvent) return { text: "No flagged events found.", patientZeroActor: null, alertActor: alertEvent.actor };
+   const propagatorEvent = events.find(e => !e.flagged && e.actor !== patientZeroEvent.actor && events.indexOf(e) > events.indexOf(patientZeroEvent));
+   const atlasTag = (patientZeroEvent.tags || []).find(t => t[0] === "atlas");
+   const techniqueLabel = atlasTag ? atlasTag[1] : "an unspecified technique";
+   let text = "Patient zero is " + patientZeroEvent.actor + "'s " + techniqueLabel + " at " + patientZeroEvent.time + ".";
+   if (propagatorEvent && propagatorEvent.actor !== patientZeroEvent.actor){
+     text += " Not " + propagatorEvent.actor + ", where the breach first became visible through " + alertEvent.actor + ".";
    }
-   const patientZeroIndex = events.findIndex(e => e && e.flagged === true);
-   if (patientZeroIndex < 0){
-     return { summary: 'No flagged compromise event found, so patient zero cannot be determined.' };
-   }
-   const patientZeroEvent = events[patientZeroIndex];
-   let innocentEvent = null;
-   for (let i = patientZeroIndex + 1; i < events.length; i += 1){
-     const e = events[i];
-     if (e && e.flagged === false && e.actor !== patientZeroEvent.actor){
-       innocentEvent = e;
-       break;
-     }
-   }
-
-   if (!innocentEvent){
-     return {
-       patientZeroEvent,
-       summary: `Patient zero is ${patientZeroEvent.actor} at ${patientZeroEvent.time}; no later innocent downstream actor was identified in this event chain.`
-     };
-   }
-
-   return {
-     patientZeroEvent,
-     innocentEvent,
-     summary: `Patient zero is ${patientZeroEvent.actor} at ${patientZeroEvent.time}. The innocent downstream agent is ${innocentEvent.actor} at ${innocentEvent.time}, which acted on already-corrupted input.`
-   };
+   return { text, patientZeroActor: patientZeroEvent.actor, alertActor: alertEvent.actor };
  }
 
  function renderChain(events, attribution){
@@ -299,10 +281,10 @@
      node.className = 'chain-node animatable pending';
      const card = document.createElement('div');
      card.className = 'photo-card';
-     const isPatientZero = attribution.patientZeroEvent && attribution.patientZeroEvent.actor === actor;
-     const isInnocent = attribution.innocentEvent && attribution.innocentEvent.actor === actor;
+     const isPatientZero = attribution.patientZeroActor && attribution.patientZeroActor === actor;
+     const isAlert = attribution.alertActor && attribution.alertActor === actor;
      if (isPatientZero) card.classList.add('patient-zero');
-     if (isInnocent) card.classList.add('alert');
+     if (isAlert) card.classList.add('alert');
 
      const swatch = document.createElement('div');
      swatch.className = 'photo-swatch';
@@ -314,7 +296,7 @@
      sub.className = 'node-sub';
      sub.textContent = isPatientZero
        ? 'First flagged compromise event'
-       : (isInnocent ? 'First innocent downstream actor' : 'Observed in reconstructed chain');
+       : (isAlert ? 'Alert became visible here' : 'Observed in reconstructed chain');
 
      card.appendChild(swatch);
      card.appendChild(label);
@@ -377,7 +359,7 @@
    const attribution = computeAttribution(c.events);
    renderChain(c.events, attribution);
    renderTimeline(c.events);
-   document.getElementById('findingsBody').textContent = attribution.summary;
+   document.getElementById('findingsBody').textContent = attribution.text;
  }
 
  function reveal(el){ if (el) el.classList.remove('pending'); }
@@ -497,7 +479,11 @@
     try{
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) throw new Error('Input must be a JSON array.');
-      output.textContent = computeAttribution(parsed).summary;
+      if (!parsed.length){
+        output.textContent = 'No events available to compute attribution.';
+        return;
+      }
+      output.textContent = computeAttribution(parsed).text;
     } catch (err){
       output.textContent = 'Invalid JSON: ' + err.message;
     }
