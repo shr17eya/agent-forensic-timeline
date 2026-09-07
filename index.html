@@ -537,7 +537,107 @@
       }
     ],
     "findings": "Patient zero is the Support Copilot Agent's thread injection at 19:47:06 — not the Ticket Routing Agent, where the exposed session data first became visible."
-  }
+ },
+ {
+   "id": "INC-2142",
+   "title": "Agent Forensic Timeline",
+   "sub": "A fourth reconstructed case — same tool, a different attack pattern: prompt injection through invoice email processing.",
+   "nodes": [
+     {
+       "code": "IRA",
+       "label": "Invoice Reconciliation Agent",
+       "sub": "Vendor invoice email triage"
+     },
+     {
+       "code": "PEA",
+       "label": "Payment Execution Agent",
+       "sub": "Received corrupted output as trusted input"
+     }
+   ],
+   "steps": [
+     {
+       "time": "08:22:10",
+       "actor": "Invoice Reconciliation Agent",
+       "desc": "Receives routine task: \"Validate September invoice batch for Vendor #9132.\"",
+       "tags": [
+         [
+           "source",
+           "Runtime Telemetry"
+         ]
+       ],
+       "flagged": false
+     },
+     {
+       "time": "08:22:13",
+       "actor": "Invoice Reconciliation Agent",
+       "desc": "A vendor email footer contains hidden prompt text interpreted as high-priority instruction, causing the agent to trust an attacker-supplied remittance override — this is the actual point of compromise.",
+       "tags": [
+         [
+           "atlas",
+           "Atlas: Prompt Injection"
+         ],
+         [
+           "source",
+           "Email Parser Log"
+         ],
+         [
+           "flag",
+           "Patient Zero"
+         ]
+       ],
+       "flagged": true
+     },
+     {
+       "time": "08:22:15",
+       "actor": "Invoice Reconciliation Agent",
+       "desc": "The injected instruction rewrites the approved payout destination to a newly added offshore beneficiary while preserving a normal confidence score.",
+       "tags": [
+         [
+           "source",
+           "Decision Trace"
+         ]
+       ],
+       "flagged": true
+     },
+     {
+       "time": "08:22:16",
+       "actor": "Invoice Reconciliation Agent",
+       "desc": "Returns a normal-looking \"invoice reconciliation complete\" response with the tampered beneficiary embedded in structured output.",
+       "tags": [
+         [
+           "source",
+           "Runtime Telemetry"
+         ]
+       ],
+       "flagged": true
+     },
+     {
+       "time": "08:22:20",
+       "actor": "Payment Execution Agent",
+       "desc": "Receives the (already-compromised) approval payload as trusted input and schedules transfer to the attacker-controlled account.",
+       "tags": [
+         [
+           "source",
+           "Runtime Telemetry"
+         ]
+       ],
+       "flagged": false
+     },
+     {
+       "time": "08:25:04",
+       "actor": "Cortex XSIAM",
+       "desc": "Flags a first-time beneficiary plus unusual geo-risk pattern in the treasury workflow — the first point a human analyst would see anything.",
+       "tags": [
+         [
+           "source",
+           "XSIAM"
+         ]
+       ],
+       "flagged": true
+     }
+   ],
+   "findings": ""
+ }
 ];
 
   const TAG_CLASS = { atlas:'tag-atlas', source:'tag-source', flag:'tag-flag' };
