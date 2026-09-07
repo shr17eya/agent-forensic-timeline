@@ -176,519 +176,221 @@
   </div>
 
   <div class="section-label">Suspects — where the corruption started vs. where it was noticed</div>
-  <div class="chain">
-    <div class="chain-node animatable pending" id="node1">
-      <div class="photo-card" id="node1box">
-        <div class="photo-swatch" id="node1code">VOA</div>
-        <div class="node-label" id="node1label"></div>
-        <div class="node-sub" id="node1sub"></div>
-        <div class="node-tag" id="node1tag">Patient Zero</div>
-      </div>
-    </div>
-    <div class="chain-node animatable pending" id="node2">
-      <div class="photo-card">
-        <div class="photo-swatch" id="node2code">PAA</div>
-        <div class="node-label" id="node2label"></div>
-        <div class="node-sub" id="node2sub"></div>
-      </div>
-    </div>
-    <div class="chain-node animatable pending" id="node3">
-      <div class="photo-card" id="node3box">
-        <div class="photo-swatch">XS</div>
-        <div class="node-label">Cortex XSIAM</div>
-        <div class="node-sub">Anomaly alert fired here</div>
-      </div>
-    </div>
-  </div>
+  <div class="chain" id="chain"></div>
 
   <div class="section-label">Reconstructed evidence log</div>
-  <div class="timeline" id="timeline">
-    <div class="step normal animatable pending" id="s1"><div class="step-top"><span class="step-time"></span><span class="step-actor"></span></div><div class="step-desc"></div><div class="step-tags"></div></div>
-    <div class="step flagged animatable pending" id="s2"><div class="step-top"><span class="step-time"></span><span class="step-actor"></span></div><div class="step-desc"></div><div class="step-tags"></div></div>
-    <div class="step flagged animatable pending" id="s3"><div class="step-top"><span class="step-time"></span><span class="step-actor"></span></div><div class="step-desc"></div><div class="step-tags"></div></div>
-    <div class="step flagged animatable pending" id="s4"><div class="step-top"><span class="step-time"></span><span class="step-actor"></span></div><div class="step-desc"></div><div class="step-tags"></div></div>
-    <div class="step normal animatable pending" id="s5"><div class="step-top"><span class="step-time"></span><span class="step-actor"></span></div><div class="step-desc"></div><div class="step-tags"></div></div>
-    <div class="step flagged animatable pending" id="s6"><div class="step-top"><span class="step-time"></span><span class="step-actor"></span></div><div class="step-desc"></div><div class="step-tags"></div></div>
-  </div>
+  <div class="timeline" id="timeline"></div>
 
   <div class="findings">
     <div class="findings-stamp">CONFIRMED</div>
     <div class="findings-title">Attribution</div>
     <div class="findings-sub">Auto-generated from the reconstructed chain above</div>
     <div class="findings-body" id="findingsBody"></div>
-    <div class="findings-actions">
-      <button class="btn" id="downloadReport">⬇ Download Evidence Log (.txt)</button>
-      <button class="btn btn-primary" id="exportToDPDP" disabled>Export Root Cause → DPDP AutoReport</button>
-    </div>
-  </div>
+   <div class="findings-actions">
+     <button class="btn" id="downloadReport">⬇ Download Evidence Log (.txt)</button>
+     <button class="btn btn-primary" id="exportToDPDP" disabled>Export Root Cause → DPDP AutoReport</button>
+   </div>
+ </div>
+
+ <div class="findings" style="margin-top:20px;">
+   <div class="findings-title">Analyze Your Own Case</div>
+   <div class="findings-sub">Paste JSON event array and run attribution</div>
+   <textarea id="customEventsInput" style="width:100%;min-height:140px;padding:10px;border:1px solid var(--card-edge);background:#fffaf0;color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:12px;" placeholder='[{"actor":"Agent A","time":"09:00:00","desc":"...","flagged":true,"tags":[["source","Runtime Telemetry"]]}]'></textarea>
+   <div class="findings-actions" style="margin-top:12px;">
+     <button class="btn" id="analyzeCustomBtn">Analyze Input</button>
+   </div>
+   <div class="findings-body" id="customAttributionBody" style="margin-top:10px;margin-bottom:0;"></div>
+ </div>
 </div>
 
 <script>
-  // ---------- Three distinct, technically-grounded cases ----------
-  const CASES = [
-  {
-    "id": "INC-2094",
-    "title": "Agent Forensic Timeline",
-    "sub": "Reconstructing the agent decision chain — feeds the \"Root cause\" field of the DPDP AutoReport module for this same incident.",
-    "nodes": [
-      {
-        "code": "VOA",
-        "label": "Vendor-Onboarding Agent",
-        "sub": "Long-term memory store"
-      },
-      {
-        "code": "PAA",
-        "label": "Procurement Approval Agent",
-        "sub": "Received corrupted output as trusted input"
-      }
-    ],
-    "steps": [
-      {
-        "time": "09:11:02",
-        "actor": "Vendor-Onboarding Agent",
-        "desc": "Receives routine task: \"Fetch latest KYC documents for Vendor #4471.\"",
-        "tags": [
-          [
-            "source",
-            "Runtime Telemetry"
-          ]
-        ],
-        "flagged": false
-      },
-      {
-        "time": "09:11:04",
-        "actor": "Vendor-Onboarding Agent",
-        "desc": "Loads a cached context note from long-term memory. The note was silently altered in a prior session — this is the actual point of compromise.",
-        "tags": [
-          [
-            "atlas",
-            "Atlas: Memory Manipulation"
-          ],
-          [
-            "source",
-            "Memory Snapshot"
-          ],
-          [
-            "flag",
-            "Patient Zero"
-          ]
-        ],
-        "flagged": true
-      },
-      {
-        "time": "09:11:05",
-        "actor": "Vendor-Onboarding Agent",
-        "desc": "The poisoned context silently redirects the document-retrieval tool call to an unauthorised external endpoint instead of the real vendor portal.",
-        "tags": [
-          [
-            "atlas",
-            "Atlas: Tool-Chain Poisoning"
-          ],
-          [
-            "source",
-            "Tool-Call Log"
-          ]
-        ],
-        "flagged": true
-      },
-      {
-        "time": "09:11:06",
-        "actor": "Vendor-Onboarding Agent",
-        "desc": "Returns a normal-looking \"success\" response. Nothing in the agent's own tool-call log indicates anything went wrong.",
-        "tags": [
-          [
-            "source",
-            "Tool-Call Log"
-          ]
-        ],
-        "flagged": true
-      },
-      {
-        "time": "09:11:09",
-        "actor": "Procurement Approval Agent",
-        "desc": "Receives the (already-compromised) output as trusted input from the first agent and approves the vendor record update.",
-        "tags": [
-          [
-            "source",
-            "Runtime Telemetry"
-          ]
-        ],
-        "flagged": false
-      },
-      {
-        "time": "09:14:00",
-        "actor": "Cortex XSIAM",
-        "desc": "Flags anomalous outbound data volume from the procurement workflow — nearly three minutes after the real point of compromise.",
-        "tags": [
-          [
-            "source",
-            "XSIAM"
-          ]
-        ],
-        "flagged": true
-      }
-    ],
-    "findings": "Patient zero is the Vendor-Onboarding Agent's memory manipulation at 09:11:04 — not the Procurement Approval Agent, where the breach first became externally visible through XSIAM."
-  },
-  {
-    "id": "INC-2101",
-    "title": "Agent Forensic Timeline",
-    "sub": "A second reconstructed case — same tool, a different attack pattern: context poisoning via document intake.",
-    "nodes": [
-      {
-        "code": "HRA",
-        "label": "HR Onboarding Agent",
-        "sub": "New-hire document intake"
-      },
-      {
-        "code": "PSA",
-        "label": "Payroll Sync Agent",
-        "sub": "Received corrupted output as trusted input"
-      }
-    ],
-    "steps": [
-      {
-        "time": "14:02:11",
-        "actor": "HR Onboarding Agent",
-        "desc": "Receives routine task: \"Process new-hire intake packet for Employee #2207.\"",
-        "tags": [
-          [
-            "source",
-            "Runtime Telemetry"
-          ]
-        ],
-        "flagged": false
-      },
-      {
-        "time": "14:02:14",
-        "actor": "HR Onboarding Agent",
-        "desc": "A resume attachment in the intake packet contains hidden instructions that alter the agent's operating context — this is the actual point of compromise.",
-        "tags": [
-          [
-            "atlas",
-            "Atlas: AI Agent Context Poisoning"
-          ],
-          [
-            "source",
-            "Document Parser Log"
-          ],
-          [
-            "flag",
-            "Patient Zero"
-          ]
-        ],
-        "flagged": true
-      },
-      {
-        "time": "14:02:16",
-        "actor": "HR Onboarding Agent",
-        "desc": "The altered context silently modifies the agent's own configuration, changing bank-account verification from mandatory to skipped.",
-        "tags": [
-          [
-            "atlas",
-            "Atlas: Modify AI Agent Configuration"
-          ],
-          [
-            "source",
-            "Config Diff"
-          ]
-        ],
-        "flagged": true
-      },
-      {
-        "time": "14:02:17",
-        "actor": "HR Onboarding Agent",
-        "desc": "Returns a normal-looking \"intake complete\" response. Nothing in the agent's own logs indicates its configuration changed.",
-        "tags": [
-          [
-            "source",
-            "Runtime Telemetry"
-          ]
-        ],
-        "flagged": true
-      },
-      {
-        "time": "14:02:20",
-        "actor": "Payroll Sync Agent",
-        "desc": "Receives the (already-compromised) record as trusted input and syncs an unverified bank account as the payment destination.",
-        "tags": [
-          [
-            "source",
-            "Runtime Telemetry"
-          ]
-        ],
-        "flagged": false
-      },
-      {
-        "time": "14:05:40",
-        "actor": "Cortex XSIAM",
-        "desc": "Flags an anomalous first-payroll-cycle destination-account change — the first point a human analyst would see anything.",
-        "tags": [
-          [
-            "source",
-            "XSIAM"
-          ]
-        ],
-        "flagged": true
-      }
-    ],
-    "findings": "Patient zero is the HR Onboarding Agent's context poisoning at 14:02:14 — not the Payroll Sync Agent, where the bad payment destination first became visible."
-  },
-  {
-    "id": "INC-2115",
-    "title": "Agent Forensic Timeline",
-    "sub": "A third reconstructed case — same tool, a different attack pattern: thread injection and sandbox escape.",
-    "nodes": [
-      {
-        "code": "SCA",
-        "label": "Support Copilot Agent",
-        "sub": "Customer chat reasoning thread"
-      },
-      {
-        "code": "TRA",
-        "label": "Ticket Routing Agent",
-        "sub": "Received corrupted output as trusted input"
-      }
-    ],
-    "steps": [
-      {
-        "time": "19:47:03",
-        "actor": "Support Copilot Agent",
-        "desc": "Receives routine task: \"Respond to customer chat, ticket #88291.\"",
-        "tags": [
-          [
-            "source",
-            "Runtime Telemetry"
-          ]
-        ],
-        "flagged": false
-      },
-      {
-        "time": "19:47:06",
-        "actor": "Support Copilot Agent",
-        "desc": "A crafted customer message is treated as a system-level instruction inside the agent's reasoning thread — this is the actual point of compromise.",
-        "tags": [
-          [
-            "atlas",
-            "Atlas: Thread Injection"
-          ],
-          [
-            "source",
-            "Chat Transcript"
-          ],
-          [
-            "flag",
-            "Patient Zero"
-          ]
-        ],
-        "flagged": true
-      },
-      {
-        "time": "19:47:08",
-        "actor": "Support Copilot Agent",
-        "desc": "The injected instruction causes the agent to step outside its sandboxed tool environment and read local session files.",
-        "tags": [
-          [
-            "atlas",
-            "Atlas: Escape to Host"
-          ],
-          [
-            "source",
-            "Sandbox Log"
-          ]
-        ],
-        "flagged": true
-      },
-      {
-        "time": "19:47:09",
-        "actor": "Support Copilot Agent",
-        "desc": "Returns a normal-looking chat reply. Nothing in the visible conversation log indicates a sandbox escape occurred.",
-        "tags": [
-          [
-            "source",
-            "Chat Transcript"
-          ]
-        ],
-        "flagged": true
-      },
-      {
-        "time": "19:47:13",
-        "actor": "Ticket Routing Agent",
-        "desc": "Receives the (already-compromised) session data attached to the routed ticket and forwards it as trusted input to a support queue.",
-        "tags": [
-          [
-            "source",
-            "Runtime Telemetry"
-          ]
-        ],
-        "flagged": false
-      },
-      {
-        "time": "19:49:50",
-        "actor": "Cortex XSIAM",
-        "desc": "Flags an unusual file-read pattern originating from the copilot's sandbox — the first point a human analyst would see anything.",
-        "tags": [
-          [
-            "source",
-            "XSIAM"
-          ]
-        ],
-        "flagged": true
-      }
-    ],
-    "findings": "Patient zero is the Support Copilot Agent's thread injection at 19:47:06 — not the Ticket Routing Agent, where the exposed session data first became visible."
- },
- {
-   "id": "INC-2142",
-   "title": "Agent Forensic Timeline",
-   "sub": "A fourth reconstructed case — same tool, a different attack pattern: prompt injection through invoice email processing.",
-   "nodes": [
-     {
-       "code": "IRA",
-       "label": "Invoice Reconciliation Agent",
-       "sub": "Vendor invoice email triage"
-     },
-     {
-       "code": "PEA",
-       "label": "Payment Execution Agent",
-       "sub": "Received corrupted output as trusted input"
-     }
-   ],
-   "steps": [
-     {
-       "time": "08:22:10",
-       "actor": "Invoice Reconciliation Agent",
-       "desc": "Receives routine task: \"Validate September invoice batch for Vendor #9132.\"",
-       "tags": [
-         [
-           "source",
-           "Runtime Telemetry"
-         ]
-       ],
-       "flagged": false
-     },
-     {
-       "time": "08:22:13",
-       "actor": "Invoice Reconciliation Agent",
-       "desc": "A vendor email footer contains hidden prompt text interpreted as high-priority instruction, causing the agent to trust an attacker-supplied remittance override — this is the actual point of compromise.",
-       "tags": [
-         [
-           "atlas",
-           "Atlas: Prompt Injection"
-         ],
-         [
-           "source",
-           "Email Parser Log"
-         ],
-         [
-           "flag",
-           "Patient Zero"
-         ]
-       ],
-       "flagged": true
-     },
-     {
-       "time": "08:22:15",
-       "actor": "Invoice Reconciliation Agent",
-       "desc": "The injected instruction rewrites the approved payout destination to a newly added offshore beneficiary while preserving a normal confidence score.",
-       "tags": [
-         [
-           "source",
-           "Decision Trace"
-         ]
-       ],
-       "flagged": true
-     },
-     {
-       "time": "08:22:16",
-       "actor": "Invoice Reconciliation Agent",
-       "desc": "Returns a normal-looking \"invoice reconciliation complete\" response with the tampered beneficiary embedded in structured output.",
-       "tags": [
-         [
-           "source",
-           "Runtime Telemetry"
-         ]
-       ],
-       "flagged": true
-     },
-     {
-       "time": "08:22:20",
-       "actor": "Payment Execution Agent",
-       "desc": "Receives the (already-compromised) approval payload as trusted input and schedules transfer to the attacker-controlled account.",
-       "tags": [
-         [
-           "source",
-           "Runtime Telemetry"
-         ]
-       ],
-       "flagged": false
-     },
-     {
-       "time": "08:25:04",
-       "actor": "Cortex XSIAM",
-       "desc": "Flags a first-time beneficiary plus unusual geo-risk pattern in the treasury workflow — the first point a human analyst would see anything.",
-       "tags": [
-         [
-           "source",
-           "XSIAM"
-         ]
-       ],
-       "flagged": true
-     }
-   ],
-   "findings": ""
+ const EXAMPLES = [
+   {
+     id: "INC-2094",
+     label: "Memory manipulation redirects a document-retrieval call",
+     events: [
+       { time: "09:11:02", actor: "Vendor-Onboarding Agent", desc: "Receives routine task: \"Fetch latest KYC documents for Vendor #4471.\"", tags: [["source", "Runtime Telemetry"]], flagged: false },
+       { time: "09:11:04", actor: "Vendor-Onboarding Agent", desc: "Loads a cached context note from long-term memory. The note was silently altered in a prior session — this is the actual point of compromise.", tags: [["atlas", "Atlas: Memory Manipulation"], ["source", "Memory Snapshot"]], flagged: true },
+       { time: "09:11:05", actor: "Vendor-Onboarding Agent", desc: "The poisoned context silently redirects the document-retrieval tool call to an unauthorised external endpoint instead of the real vendor portal.", tags: [["atlas", "Atlas: Tool-Chain Poisoning"], ["source", "Tool-Call Log"]], flagged: true },
+       { time: "09:11:06", actor: "Vendor-Onboarding Agent", desc: "Returns a normal-looking \"success\" response. Nothing in the agent's own tool-call log indicates anything went wrong.", tags: [["source", "Tool-Call Log"]], flagged: true },
+       { time: "09:11:09", actor: "Procurement Approval Agent", desc: "Receives the (already-compromised) output as trusted input from the first agent and approves the vendor record update.", tags: [["source", "Runtime Telemetry"]], flagged: false },
+       { time: "09:14:00", actor: "Cortex XSIAM", desc: "Flags anomalous outbound data volume from the procurement workflow — nearly three minutes after the real point of compromise.", tags: [["source", "XSIAM"]], flagged: true }
+     ]
+   },
+   {
+     id: "INC-2101",
+     label: "A poisoned document intake corrupts an HR agent's configuration",
+     events: [
+       { time: "14:02:11", actor: "HR Onboarding Agent", desc: "Receives routine task: \"Process new-hire intake packet for Employee #2207.\"", tags: [["source", "Runtime Telemetry"]], flagged: false },
+       { time: "14:02:14", actor: "HR Onboarding Agent", desc: "A resume attachment in the intake packet contains hidden instructions that alter the agent's operating context — this is the actual point of compromise.", tags: [["atlas", "Atlas: AI Agent Context Poisoning"], ["source", "Document Parser Log"]], flagged: true },
+       { time: "14:02:16", actor: "HR Onboarding Agent", desc: "The altered context silently modifies the agent's own configuration, changing bank-account verification from mandatory to skipped.", tags: [["atlas", "Atlas: Modify AI Agent Configuration"], ["source", "Config Diff"]], flagged: true },
+       { time: "14:02:17", actor: "HR Onboarding Agent", desc: "Returns a normal-looking \"intake complete\" response. Nothing in the agent's own logs indicates its configuration changed.", tags: [["source", "Runtime Telemetry"]], flagged: true },
+       { time: "14:02:20", actor: "Payroll Sync Agent", desc: "Receives the (already-compromised) record as trusted input and syncs an unverified bank account as the payment destination.", tags: [["source", "Runtime Telemetry"]], flagged: false },
+       { time: "14:05:40", actor: "Cortex XSIAM", desc: "Flags an anomalous first-payroll-cycle destination-account change — the first point a human analyst would see anything.", tags: [["source", "XSIAM"]], flagged: true }
+     ]
+   },
+   {
+     id: "INC-2115",
+     label: "A crafted chat message hijacks an agent's reasoning thread",
+     events: [
+       { time: "19:47:03", actor: "Support Copilot Agent", desc: "Receives routine task: \"Respond to customer chat, ticket #88291.\"", tags: [["source", "Runtime Telemetry"]], flagged: false },
+       { time: "19:47:06", actor: "Support Copilot Agent", desc: "A crafted customer message is treated as a system-level instruction inside the agent's reasoning thread — this is the actual point of compromise.", tags: [["atlas", "Atlas: Thread Injection"], ["source", "Chat Transcript"]], flagged: true },
+       { time: "19:47:08", actor: "Support Copilot Agent", desc: "The injected instruction causes the agent to step outside its sandboxed tool environment and read local session files.", tags: [["atlas", "Atlas: Escape to Host"], ["source", "Sandbox Log"]], flagged: true },
+       { time: "19:47:09", actor: "Support Copilot Agent", desc: "Returns a normal-looking chat reply. Nothing in the visible conversation log indicates a sandbox escape occurred.", tags: [["source", "Chat Transcript"]], flagged: true },
+       { time: "19:47:13", actor: "Ticket Routing Agent", desc: "Receives the (already-compromised) session data attached to the routed ticket and forwards it as trusted input to a support queue.", tags: [["source", "Runtime Telemetry"]], flagged: false },
+       { time: "19:49:50", actor: "Cortex XSIAM", desc: "Flags an unusual file-read pattern originating from the copilot's sandbox — the first point a human analyst would see anything.", tags: [["source", "XSIAM"]], flagged: true }
+     ]
+   }
+ ];
+
+ const TAG_CLASS = { atlas:'tag-atlas', source:'tag-source' };
+ let currentCaseIndex = 0;
+
+ function initials(actor){
+   return String(actor || '').split(/\s+/).filter(Boolean).slice(0,3).map(p => p[0]?.toUpperCase() || '').join('');
  }
-];
 
-  const TAG_CLASS = { atlas:'tag-atlas', source:'tag-source', flag:'tag-flag' };
-  let currentCaseIndex = 0;
+ function computeAttribution(events){
+   if (!Array.isArray(events) || !events.length){
+     return { summary: 'No events available to compute attribution.' };
+   }
+   const patientZeroIndex = events.findIndex(e => e && e.flagged === true);
+   if (patientZeroIndex < 0){
+     return { summary: 'No flagged compromise event found, so patient zero cannot be determined.' };
+   }
+   const patientZeroEvent = events[patientZeroIndex];
+   let innocentEvent = null;
+   for (let i = patientZeroIndex + 1; i < events.length; i += 1){
+     const e = events[i];
+     if (e && e.flagged === false && e.actor !== patientZeroEvent.actor){
+       innocentEvent = e;
+       break;
+     }
+   }
 
-  function renderCase(idx){
-    const c = CASES[idx];
-    currentCaseIndex = idx;
-    document.getElementById('folderTab').textContent = 'CASE FILE · ' + c.id;
-    document.getElementById('caseTitle').textContent = c.title;
-    document.getElementById('caseSub').textContent = c.sub;
-    document.getElementById('node1code').textContent = c.nodes[0].code;
-    document.getElementById('node1label').textContent = c.nodes[0].label;
-    document.getElementById('node1sub').textContent = c.nodes[0].sub;
-    document.getElementById('node2code').textContent = c.nodes[1].code;
-    document.getElementById('node2label').textContent = c.nodes[1].label;
-    document.getElementById('node2sub').textContent = c.nodes[1].sub;
+   if (!innocentEvent){
+     return {
+       patientZeroEvent,
+       summary: `Patient zero is ${patientZeroEvent.actor} at ${patientZeroEvent.time}; no later innocent downstream actor was identified in this event chain.`
+     };
+   }
 
-    ['s1','s2','s3','s4','s5','s6'].forEach((id, i) => {
-      const step = c.steps[i];
-      const el = document.getElementById(id);
-      el.querySelector('.step-time').textContent = step.time;
-      el.querySelector('.step-actor').textContent = step.actor;
-      el.querySelector('.step-desc').textContent = step.desc;
-      const tagsEl = el.querySelector('.step-tags');
-      tagsEl.innerHTML = '';
-      step.tags.forEach(([type, text]) => {
-        const span = document.createElement('span');
-        span.className = 'step-tag ' + TAG_CLASS[type];
-        span.textContent = text;
-        tagsEl.appendChild(span);
-      });
-    });
+   return {
+     patientZeroEvent,
+     innocentEvent,
+     summary: `Patient zero is ${patientZeroEvent.actor} at ${patientZeroEvent.time}. The innocent downstream agent is ${innocentEvent.actor} at ${innocentEvent.time}, which acted on already-corrupted input.`
+   };
+ }
 
-    document.getElementById('findingsBody').textContent = c.findings;
-  }
+ function renderChain(events, attribution){
+   const chainEl = document.getElementById('chain');
+   chainEl.innerHTML = '';
+   const seen = new Set();
+   const actors = [];
+   events.forEach(e => {
+     if (!seen.has(e.actor)){
+       seen.add(e.actor);
+       actors.push(e.actor);
+     }
+   });
 
-  function reveal(id){ const el = document.getElementById(id); if (el) el.classList.remove('pending'); }
-  const statusEl = document.getElementById('replayStatus');
-  function setStatus(t){ statusEl.innerHTML = '<span class="live-dot"></span>' + t; }
-  const replayBtn = document.getElementById('replayBtn');
-  const exportBtn = document.getElementById('exportToDPDP');
+   actors.forEach(actor => {
+     const node = document.createElement('div');
+     node.className = 'chain-node animatable pending';
+     const card = document.createElement('div');
+     card.className = 'photo-card';
+     const isPatientZero = attribution.patientZeroEvent && attribution.patientZeroEvent.actor === actor;
+     const isInnocent = attribution.innocentEvent && attribution.innocentEvent.actor === actor;
+     if (isPatientZero) card.classList.add('patient-zero');
+     if (isInnocent) card.classList.add('alert');
 
-  function resetSequence(){
-    ['node1','node2','node3','s1','s2','s3','s4','s5','s6'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('pending'); });
-    document.getElementById('node1box').classList.remove('patient-zero');
-    document.getElementById('node1tag').classList.remove('show');
-    document.getElementById('node3box').classList.remove('alert');
-    exportBtn.disabled = true;
-    exportBtn.textContent = 'Export Root Cause → DPDP AutoReport';
-    exportBtn.classList.remove('exported');
+     const swatch = document.createElement('div');
+     swatch.className = 'photo-swatch';
+     swatch.textContent = initials(actor);
+     const label = document.createElement('div');
+     label.className = 'node-label';
+     label.textContent = actor;
+     const sub = document.createElement('div');
+     sub.className = 'node-sub';
+     sub.textContent = isPatientZero
+       ? 'First flagged compromise event'
+       : (isInnocent ? 'First innocent downstream actor' : 'Observed in reconstructed chain');
+
+     card.appendChild(swatch);
+     card.appendChild(label);
+     card.appendChild(sub);
+     if (isPatientZero){
+       const tag = document.createElement('div');
+       tag.className = 'node-tag show';
+       tag.textContent = 'Patient Zero';
+       card.appendChild(tag);
+     }
+     node.appendChild(card);
+     chainEl.appendChild(node);
+   });
+ }
+
+ function renderTimeline(events){
+   const timelineEl = document.getElementById('timeline');
+   timelineEl.innerHTML = '';
+   events.forEach(step => {
+     const el = document.createElement('div');
+     el.className = `step ${step.flagged ? 'flagged' : 'normal'} animatable pending`;
+     const top = document.createElement('div');
+     top.className = 'step-top';
+     const time = document.createElement('span');
+     time.className = 'step-time';
+     time.textContent = step.time || '';
+     const actor = document.createElement('span');
+     actor.className = 'step-actor';
+     actor.textContent = step.actor || '';
+     top.appendChild(time);
+     top.appendChild(actor);
+
+     const desc = document.createElement('div');
+     desc.className = 'step-desc';
+     desc.textContent = step.desc || '';
+
+     const tags = document.createElement('div');
+     tags.className = 'step-tags';
+     (step.tags || []).forEach(([type, text]) => {
+       if (!TAG_CLASS[type]) return;
+       const span = document.createElement('span');
+       span.className = 'step-tag ' + TAG_CLASS[type];
+       span.textContent = text;
+       tags.appendChild(span);
+     });
+
+     el.appendChild(top);
+     el.appendChild(desc);
+     el.appendChild(tags);
+     timelineEl.appendChild(el);
+   });
+ }
+
+ function renderCase(idx){
+   const c = EXAMPLES[idx];
+   currentCaseIndex = idx;
+   document.getElementById('folderTab').textContent = 'CASE FILE · ' + c.id;
+   document.getElementById('caseTitle').textContent = 'Agent Forensic Timeline';
+   document.getElementById('caseSub').textContent = c.label;
+   const attribution = computeAttribution(c.events);
+   renderChain(c.events, attribution);
+   renderTimeline(c.events);
+   document.getElementById('findingsBody').textContent = attribution.summary;
+ }
+
+ function reveal(el){ if (el) el.classList.remove('pending'); }
+ const statusEl = document.getElementById('replayStatus');
+ function setStatus(t){ statusEl.innerHTML = '<span class="live-dot"></span>' + t; }
+ const replayBtn = document.getElementById('replayBtn');
+ const exportBtn = document.getElementById('exportToDPDP');
+
+ function resetSequence(){
+   document.querySelectorAll('.animatable').forEach(el => el.classList.add('pending'));
+   exportBtn.disabled = true;
+   exportBtn.textContent = 'Export Root Cause → DPDP AutoReport';
+   exportBtn.classList.remove('exported');
   }
 
   function playSequence(){
@@ -697,22 +399,20 @@
     resetSequence();
     setStatus('Cortex XSIAM: anomaly alert received — starting forensic reconstruction');
 
-    const steps = [
-      [700,  () => { reveal('node1'); }],
-      [500,  () => setStatus('Pulling runtime telemetry…')],
-      [900,  () => reveal('s1')],
-      [1000, () => setStatus('Cross-referencing memory and context sources…')],
-      [900,  () => reveal('s2')],
-      [700,  () => { document.getElementById('node1box').classList.add('patient-zero'); document.getElementById('node1tag').classList.add('show'); }],
-      [900,  () => setStatus('Tracing tool-call and configuration logs…')],
-      [900,  () => reveal('s3')],
-      [800,  () => reveal('s4')],
-      [900,  () => { reveal('node2'); setStatus('Tracing handoff to the second agent…'); }],
-      [900,  () => reveal('s5')],
-      [900,  () => { reveal('node3'); document.getElementById('node3box').classList.add('alert'); setStatus('Correlating with XSIAM alert timestamp…'); }],
-      [800,  () => reveal('s6')],
-      [900,  () => { setStatus('Investigation complete — attribution ready'); exportBtn.disabled = false; }],
-    ];
+    const nodeEls = Array.from(document.querySelectorAll('#chain .chain-node'));
+    const stepEls = Array.from(document.querySelectorAll('#timeline .step'));
+    const steps = [];
+    nodeEls.forEach((node, i) => {
+      steps.push([i === 0 ? 700 : 500, () => reveal(node)]);
+    });
+    steps.push([500, () => setStatus('Pulling runtime telemetry…')]);
+    stepEls.forEach((step, i) => {
+      steps.push([800, () => reveal(step)]);
+      if (i === 1) steps.push([600, () => setStatus('Cross-referencing memory and context sources…')]);
+      if (i === 3) steps.push([600, () => setStatus('Tracing handoff to downstream agents…')]);
+    });
+    steps.push([900, () => { setStatus('Investigation complete — attribution ready'); exportBtn.disabled = false; }]);
+
     let t = 400;
     steps.forEach(([delay, action]) => { t += delay; setTimeout(action, t); });
     setTimeout(() => { replayBtn.disabled = false; replayBtn.textContent = '↻ Replay Investigation'; }, t + 400);
@@ -720,7 +420,7 @@
 
   replayBtn.addEventListener('click', playSequence);
 
-  const STORAGE_KEY = 'agent_forensic_demo_v2';
+  const STORAGE_KEY = 'agent_forensic_demo_v3';
   function saveState(){
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ caseIndex: currentCaseIndex, exported: exportBtn.classList.contains('exported') })); } catch(e) {}
   }
@@ -731,14 +431,11 @@
     if (!saved) return false;
 
     renderCase(saved.caseIndex || 0);
-    ['node1','node2','node3','s1','s2','s3','s4','s5','s6'].forEach(id => reveal(id));
-    document.getElementById('node1box').classList.add('patient-zero');
-    document.getElementById('node1tag').classList.add('show');
-    document.getElementById('node3box').classList.add('alert');
+    document.querySelectorAll('.animatable').forEach(reveal);
     exportBtn.disabled = false;
 
     if (saved.exported){
-      exportBtn.textContent = '✓ Exported to ' + CASES[currentCaseIndex].id + ' draft';
+      exportBtn.textContent = '✓ Exported to ' + EXAMPLES[currentCaseIndex].id + ' draft';
       exportBtn.classList.add('exported');
     }
     setStatus('Restored your previous session — pick up where you left off, or hit Reset');
@@ -753,14 +450,14 @@
 
   document.getElementById('newCaseBtn').addEventListener('click', () => {
     let nextIndex;
-    do { nextIndex = Math.floor(Math.random() * CASES.length); } while (nextIndex === currentCaseIndex && CASES.length > 1);
+    do { nextIndex = Math.floor(Math.random() * EXAMPLES.length); } while (nextIndex === currentCaseIndex && EXAMPLES.length > 1);
     renderCase(nextIndex);
     saveState();
     playSequence();
   });
 
   document.getElementById('downloadReport').addEventListener('click', () => {
-    const c = CASES[currentCaseIndex];
+    const c = EXAMPLES[currentCaseIndex];
     const lines = ['CASE FILE — ' + c.id + ' — Agent Forensic Timeline', '='.repeat(46), ''];
     document.querySelectorAll('.step').forEach(step => {
       const time = step.querySelector('.step-time')?.textContent || '';
@@ -784,10 +481,26 @@
 
   exportBtn.addEventListener('click', () => {
     if (exportBtn.disabled || exportBtn.classList.contains('exported')) return;
-    exportBtn.textContent = '✓ Exported to ' + CASES[currentCaseIndex].id + ' draft';
+    exportBtn.textContent = '✓ Exported to ' + EXAMPLES[currentCaseIndex].id + ' draft';
     exportBtn.classList.add('exported');
     setStatus("Root cause exported — available in DPDP AutoReport's CERT-In draft");
     saveState();
+  });
+
+  document.getElementById('analyzeCustomBtn').addEventListener('click', () => {
+    const output = document.getElementById('customAttributionBody');
+    const raw = document.getElementById('customEventsInput').value.trim();
+    if (!raw){
+      output.textContent = 'Paste a JSON array of events to analyze.';
+      return;
+    }
+    try{
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) throw new Error('Input must be a JSON array.');
+      output.textContent = computeAttribution(parsed).summary;
+    } catch (err){
+      output.textContent = 'Invalid JSON: ' + err.message;
+    }
   });
 
   window.addEventListener('load', () => {
