@@ -1,4 +1,4 @@
-# Agent Forensic Timeline (Concept Prototype)
+# Agent Forensic Timeline ( Prototype)
 
 **An interactive investigation tool concept: reconstructing what a compromised AI agent actually did, and — critically — which agent in a multi-agent chain was the real point of compromise, not just where the damage became visible.**
 
